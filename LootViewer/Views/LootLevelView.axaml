@@ -2,12 +2,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="75"
              x:Class="LootViewer.Views.LootLevelView">
-	<Border BorderBrush="Gainsboro" BorderThickness="1" Margin="10" Padding="10">
-		<StackPanel Orientation="Horizontal">
-			<TextBlock VerticalAlignment="Center" Margin="10">Loot Level</TextBlock>
-			<TextBox Width="50" Text="{Binding LootLevel}" ></TextBox>
-		</StackPanel>
+	<Border BorderBrush="Gainsboro" BorderThickness="1" Margin="10" Padding="5" VerticalAlignment="Center">
+		<DockPanel>
+			<TextBlock VerticalAlignment="Center" Margin="10">Loot Stage</TextBlock>
+      <NumericUpDown VerticalAlignment="Center" Value="{Binding LootLevel}" Minimum="1" ></NumericUpDown>
+		</DockPanel>
 	</Border>
 </UserControl>

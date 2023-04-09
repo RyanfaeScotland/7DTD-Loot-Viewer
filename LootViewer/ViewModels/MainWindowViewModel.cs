@@ -42,8 +42,8 @@ namespace LootViewer.ViewModels
 
         // Loot Level
         public LootLevelView LootLevelView { get; set; }
-        private string? _lootLevel;
-        public string? LootLevel { 
+        private int? _lootLevel;
+        public int? LootLevel { 
             get => _lootLevel;
             set
             {
@@ -65,8 +65,22 @@ namespace LootViewer.ViewModels
             }
         }
 
+        // LootList Filter
+        public LootListsFilterView LootListsFilterView { get; set; }
+
+        public bool LootListsFilterChecked
+        {
+            get => _lootListsFilterChecked;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _lootListsFilterChecked, value);
+                LootListsFilterChanged();
+            }
+        }
+
         private CultureInfo _culture = CultureInfo.InvariantCulture;
         private string? _itemFilterText;
+        private bool _lootListsFilterChecked;
 
         // Loot Items
         public LootItemsView LootItemsView { get; set; }
@@ -97,7 +111,7 @@ namespace LootViewer.ViewModels
 
             // Loot Level
             LootLevelView = new LootLevelView();
-            LootLevel = "1";
+            LootLevel = 1;
 
             // Loot Items
             ItemFilterView = new ItemFilterView();
@@ -107,9 +121,10 @@ namespace LootViewer.ViewModels
             LootItems.CurrentChanged += LootItemSelectionChanged;
 
             // Loot Lists
+            LootListsFilterView = new LootListsFilterView();
             LootListsView = new LootListsView();
             _lootLists = new ObservableCollection<LootList>();
-            LootLists = new DataGridCollectionView(_lootLists);
+            LootLists = new DataGridCollectionView(_lootLists) { Filter = IsLootListsItemVisible };
             LootLists.SortDescriptions.Add(DataGridSortDescription.FromPath("Prob", ListSortDirection.Descending));
             LootLists.CurrentChanged += LootListSelectionChanged;
 
@@ -134,6 +149,14 @@ namespace LootViewer.ViewModels
         }
 
         /// <summary>
+        /// Called when the LootLists Filter changes
+        /// </summary>
+        private void LootListsFilterChanged()
+        {
+            LootLists.Refresh();
+        }
+
+        /// <summary>
         /// Called for each LootItem to check whether it is filtered or not
         /// </summary>
         /// <param name="obj">The LootItem to check</param>
@@ -143,6 +166,18 @@ namespace LootViewer.ViewModels
             if (_itemFilterText == null) return true;
             var item = (LootItem)obj;
             return _culture.CompareInfo.IndexOf(item.DisplayName, _itemFilterText, CompareOptions.IgnoreCase) >= 0;
+        }
+
+        /// <summary>
+        /// Called for each LootList to check whether it is filtered or not
+        /// </summary>
+        /// <param name="obj">The LootList to check</param>
+        /// <returns>True = show, False = filtered out</returns>
+        public bool IsLootListsItemVisible(object obj)
+        {
+            if (!_lootListsFilterChecked) return true;
+            var item = (LootList)obj;
+            return _containerNames != null && _containerNames.ContainsKey(item.Name);
         }
 
         /// <summary>
@@ -200,13 +235,9 @@ namespace LootViewer.ViewModels
         /// </summary>
         private void GetItemLootLists()
         {
-            int lootLevel;
-
             if (_db.LootData == null) return;
             if (LootItems.CurrentItem == null) return;
-            if (string.IsNullOrEmpty(_lootLevel)) return;
-            try { lootLevel = Convert.ToInt32(_lootLevel); }
-            catch (Exception) { return; };
+            if (_lootLevel is null) return;
 
             var selectedItem = (LootItem)LootItems.CurrentItem;
             var finder = new ItemContainerFinder(_db.LootData.Data);
@@ -216,7 +247,7 @@ namespace LootViewer.ViewModels
             {
                 var itemContainer = container.Value;
                 var probCalc = new ProbabilityCalculator(itemContainer);
-                var prob = probCalc.CalculateProbability(lootLevel);
+                var prob = probCalc.CalculateProbability(_lootLevel.Value);
                 _lootLists.Add(new LootList(container.Key, Math.Round((prob * 100), 3)));
             }
             LootLists.MoveCurrentToFirst();
